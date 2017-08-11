@@ -1,0 +1,30 @@
+version: 2.0
+jobs:
+  "ruby-2.3":
+    docker:
+      - image: circleci/ruby:2.3-node
+    working_directory: ~/ruby_scep
+    steps:
+      - checkout
+      - run: bundle install --path vendor/bundle
+      - run:
+          name: Run tests
+          command: bundle exec rspec spec --format progress
+
+  "ruby-2.4":
+    docker:
+      - image: circleci/ruby:2.4-node
+    working_directory: ~/ruby_scep
+    steps:
+      - checkout
+      - run: bundle install --path vendor/bundle
+      - run:
+          name: Run tests
+          command: bundle exec rspec spec --format progress
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - "ruby-2.3"
+      - "ruby-2.4"
