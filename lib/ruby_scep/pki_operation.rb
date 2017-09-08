@@ -3,12 +3,15 @@ module RubyScep
   class PkiOperation
     class << self
       # @param raw_csr [String] The binary encoded CSR
-      # @return DER-encoded [String], PkiMessage represented in an OpenSSL::ASN1 structure containing the
-      #   device's MDM certificate to be installed
+      # @return pki_message [PkiMessage], PkiMessage with the following attributes set:
+      #   @enrollment_response: represented in an OpenSSL::ASN1 structure containing the
+      #     device's MDM certificate to be installed
+      #   @device_certificate: the certificate the device will use to identify itself to the MDM server
       def build_response(raw_csr)
         pki_message = parse_pki_message(raw_csr)
         csr = decrypt_pki_envelope(pki_message)
-        pki_message.build_enrollment_response(csr)
+        pki_message.build_enrollment_response!(csr)
+        pki_message
       end
 
       private

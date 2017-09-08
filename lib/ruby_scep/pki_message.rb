@@ -30,7 +30,7 @@ module RubyScep
     SCEP_PKI_STATUSES = { 'SUCCESS' => 0, 'FAILURE' => 2, 'PENDING' => 3 }
     SCEP_FAIL_INFOS = { 'badAlg' => 0, 'badMessageCheck' => 1, 'badRequest' => 2, 'badTime' => 3, 'badCertId' => 4 }
 
-    attr_accessor :p7
+    attr_accessor :p7, :device_certificate, :enrollment_response
 
     def initialize(asn1, p7)
       signed_attributes = retrieve_signed_attributes(asn1)
@@ -58,10 +58,11 @@ module RubyScep
     #     c. signed (unencrypted) data (aka 2. enveloped data)
     #     d. ca certificate
     #     e. digital signature
-    def build_enrollment_response(csr)
-      degenerate_sequence = build_degenerate_sequence(csr)
+    def build_enrollment_response!(csr)
+      generate_device_certificate!(csr)
+      degenerate_sequence = build_degenerate_sequence
       enveloped_data_sequence = build_enveloped_data_sequence(degenerate_sequence)
-      build_signed_data_sequence(enveloped_data_sequence)
+      @enrollment_response = build_signed_data_sequence(enveloped_data_sequence)
     end
 
     private
@@ -74,10 +75,16 @@ module RubyScep
       end
     end
 
-    def build_degenerate_sequence(csr)
+    # Generates and sets the certificate the device will use to identify itself to the MDM server.
+    # The certificate will be embedded in the PKIMessage response to complete the SCEP process.
+    def generate_device_certificate!(csr)
       certificate = CertificateBuilder.build(csr)
       certificate.sign(RubyScep.configuration.ca_key, OpenSSL::Digest::SHA1.new)
-      PkiMessage::Degenerate.new(certificate).to_der
+      @device_certificate = certificate
+    end
+
+    def build_degenerate_sequence
+      PkiMessage::Degenerate.new(@device_certificate).to_der
     end
 
     def build_enveloped_data_sequence(degenerate_sequence)

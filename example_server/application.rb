@@ -34,7 +34,9 @@ post '/scep' do
   p 'post scep'
   if params['operation'] == 'PKIOperation'
     content_type 'application/x-pki-message'
-    RubyScep::PkiOperation.build_response(request.body.read)
+    pki_message = RubyScep::PkiOperation.build_response(request.body.read)
+    # pki_message.device_certificate is now available and ready to be persisted for later use
+    pki_message.enrollment_response
   else
     'Invalid Action'
   end

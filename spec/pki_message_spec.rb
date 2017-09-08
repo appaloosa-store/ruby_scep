@@ -63,8 +63,9 @@ describe RubyScep::PkiMessage do
 
     before(:all) { Timecop.freeze(Time.now) }
 
-    it do
-      response = pki_message.build_enrollment_response(csr)
+    it 'should generate a valid response with the SCEP attributes expected by an iDevice' do
+      pki_message.build_enrollment_response!(csr)
+      response = pki_message.enrollment_response
       p7 = OpenSSL::PKCS7.new(response)
       asn1 = OpenSSL::ASN1.decode(p7)
       attributes = signed_attributes_from_asn1(asn1)
@@ -79,32 +80,12 @@ describe RubyScep::PkiMessage do
       expect(attributes[:transaction_id]).to eq transaction_id
     end
 
-    after(:all) { Timecop.return }
-  end
+    it 'should set @enrollment_response and @device_certificate' do
+      pki_message.build_enrollment_response!(csr)
+      expect(pki_message.enrollment_response).not_to be_nil
+      expect(pki_message.device_certificate).not_to be_nil
+    end
 
-  def signed_attributes_from_asn1(asn1)
-    # enveloped_data_sequence = OpenSSL::ASN1.decode(der.value[1].value.first.value[2].value[1].value.first.value)
-    # publicly_encrypted_encryption_key = enveloped_data_sequence.value[1].value.first.value[1].value.first.value[3].value
-    # encryption_key = cert.private_decrypt(publicly_encrypted_encryption_key)
-    # encryption_iv = enveloped_data_sequence.value[1].value.first.value[2].value[1].value[1].value
-    # des = OpenSSL::Cipher::Cipher.new('des-ede3-cbc')
-    # des.decrypt
-    # des.key = encryption_key
-    # des.iv = encryption_iv
-    # encrypted_payload = enveloped_data_sequence.value[1].value.first.value[2].value[2].value
-    # payload = des.update(encrypted_payload) + des.final
-    # degenerate_sequence = OpenSSL::ASN1.decode(payload)
-    # certificate = degenerate_sequence.value[1].value.first.value[3].value.first
-    signed_data_sequence = asn1.value[1].value.first.value[3].value.first.value[3].value
-    values = {}
-    values[:content_type] = signed_data_sequence[0].value[1].value.first.value
-    values[:signing_time] = signed_data_sequence[1].value[1].value.first.value
-    values[:message_digest] = signed_data_sequence[2].value[1].value.first.value
-    values[:message_type] = signed_data_sequence[3].value[1].value.first.value
-    values[:pki_status] = signed_data_sequence[4].value[1].value.first.value
-    values[:sender_nonce] = signed_data_sequence[5].value[1].value.first.value
-    values[:recipient_nonce] = signed_data_sequence[6].value[1].value.first.value
-    values[:transaction_id] = signed_data_sequence[7].value[1].value.first.value
-    values
+    after(:all) { Timecop.return }
   end
 end

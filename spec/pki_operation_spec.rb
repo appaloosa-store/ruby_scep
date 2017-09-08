@@ -2,6 +2,46 @@
 require 'spec_helper'
 
 describe RubyScep::PkiOperation do
+  describe 'build_response' do
+    let(:transaction_id) { SecureRandom.hex }
+    let(:sender_nonce) { [SecureRandom.hex].pack('H*') }
+    let(:cert_subject) { 'CN=MDM SCEP SIGNER/C=US' }
+    let(:cert_serial) { 123 }
+    let(:raw_csr) do
+      Factories.build(
+        :raw_csr,
+        transaction_id: transaction_id,
+        sender_nonce: sender_nonce,
+        cert_subject: cert_subject,
+        cert_serial: cert_serial
+      )
+    end
+    let(:cert_store) do
+      store = OpenSSL::X509::Store.new
+      store.add_cert RubyScep.configuration.ca
+    end
+
+    subject { RubyScep::PkiOperation.build_response(raw_csr) }
+
+    it { expect(subject.device_certificate.verify(RubyScep.configuration.ca_key)).to eq true }
+    it { expect(subject.device_certificate.serial).not_to eq '' }
+    it do
+      response = subject.enrollment_response
+      p7 = OpenSSL::PKCS7.new(response)
+      asn1 = OpenSSL::ASN1.decode(p7)
+      attributes = signed_attributes_from_asn1(asn1)
+      expect(p7.verify([RubyScep.configuration.ca], cert_store, nil, OpenSSL::PKCS7::NOVERIFY)).to eq true
+      expect(attributes[:content_type]).to eq 'pkcs7-data'
+      expect(attributes[:signing_time]).to be_within(1).of(Time.now)
+      expect(attributes[:message_type]).to eq RubyScep::PkiMessage::SCEP_MESSAGE_TYPES['CertRep'].to_s
+      expect(attributes[:pki_status]).to eq RubyScep::PkiMessage::SCEP_PKI_STATUSES['SUCCESS'].to_s
+      expect(attributes[:sender_nonce]).not_to eq ''
+      expect(attributes[:sender_nonce]).to eq attributes[:recipient_nonce]
+      expect(attributes[:recipient_nonce]).to eq attributes[:sender_nonce]
+      expect(attributes[:transaction_id]).to eq transaction_id
+    end
+  end
+
   describe 'parse_pki_message' do
     let(:transaction_id) { SecureRandom.hex }
     let(:sender_nonce) { [SecureRandom.hex].pack('H*') }
