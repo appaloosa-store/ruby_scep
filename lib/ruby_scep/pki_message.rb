@@ -6,7 +6,7 @@ module RubyScep
     include OpenSSL::ASN1
 
     # get OID corresponding name http://oid-info.com/get/<the oid>
-    # get possible balues for a given OID in the CMS RFC https://www.ietf.org/rfc/rfc3369.txt
+    # get possible values for a given OID in the CMS RFC https://www.ietf.org/rfc/rfc3369.txt
     OID_MESSAGE_TYPE = '2.16.840.1.113733.1.9.2'
     OID_PKI_STATUS = '2.16.840.1.113733.1.9.3'
     OID_FAIL_INFO = '2.16.840.1.113733.1.9.4'
