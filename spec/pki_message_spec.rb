@@ -86,6 +86,11 @@ describe RubyScep::PkiMessage do
       expect(pki_message.device_certificate).not_to be_nil
     end
 
+    it 'should set @challenge_password' do
+      pki_message.build_enrollment_response!(csr)
+      expect(pki_message.challenge_password).to eq('cf31b62eca246c154b26286c9dec95ce6150ac6e19c041b6e9d166910ad38fe4')
+    end
+
     after(:all) { Timecop.return }
   end
 end

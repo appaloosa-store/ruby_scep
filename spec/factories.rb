@@ -43,7 +43,7 @@ class Factories
         OpenSSL::X509::Attribute.new(
           'challengePassword',
           Set.new([
-                    PrintableString.new('2:cf31b62eca246c154b26286c9dec95ce6150ac6e19c041b6e9d166910ad38fe4')
+                    PrintableString.new('cf31b62eca246c154b26286c9dec95ce6150ac6e19c041b6e9d166910ad38fe4')
                   ])
         )
       ]

@@ -32,8 +32,6 @@ module RubyScep
       def decrypt_pki_envelope(pki_message)
         encrypted_p7 = OpenSSL::PKCS7.new(pki_message.p7.data)
         raw_csr = encrypted_p7.decrypt(RubyScep.configuration.ca_key, RubyScep.configuration.ca, OpenSSL::PKCS7::BINARY)
-        # this is the moment when we could extract the device info from the CSR (device id and challenge password)
-        # see https://github.com/AppBlade/TestHub/blob/master/app/controllers/scep_controller.rb#L57
         OpenSSL::X509::Request.new(raw_csr)
       end
     end
