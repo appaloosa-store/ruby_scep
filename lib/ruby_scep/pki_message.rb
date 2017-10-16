@@ -30,7 +30,7 @@ module RubyScep
     SCEP_PKI_STATUSES = { 'SUCCESS' => 0, 'FAILURE' => 2, 'PENDING' => 3 }
     SCEP_FAIL_INFOS = { 'badAlg' => 0, 'badMessageCheck' => 1, 'badRequest' => 2, 'badTime' => 3, 'badCertId' => 4 }
 
-    attr_accessor :p7, :device_certificate, :enrollment_response
+    attr_accessor :p7, :device_certificate, :enrollment_response, :challenge_password
 
     def initialize(asn1, p7)
       signed_attributes = retrieve_signed_attributes(asn1)
@@ -59,6 +59,7 @@ module RubyScep
     #     d. ca certificate
     #     e. digital signature
     def build_enrollment_response!(csr)
+      extract_challenge_password!(csr)
       generate_device_certificate!(csr)
       degenerate_sequence = build_degenerate_sequence
       enveloped_data_sequence = build_enveloped_data_sequence(degenerate_sequence)
@@ -72,6 +73,15 @@ module RubyScep
       raw_signed_attributes = asn1.value[1].value.first.value[4].first.value[3].value
       raw_signed_attributes.inject({}) do |hash, raw_signed_attribute|
         hash.merge(raw_signed_attribute.value.first.value => raw_signed_attribute.value.last.value.first.value)
+      end
+    end
+
+    def extract_challenge_password!(csr)
+      raw_attribute = csr.attributes.find { |a| a.oid == 'challengePassword' }
+      if raw_attribute.nil?
+        @challenge_password = nil
+      else
+        @challenge_password = raw_attribute.value.value.first.value
       end
     end
 
