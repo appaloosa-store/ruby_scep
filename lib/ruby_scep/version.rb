@@ -3,7 +3,7 @@
 
 module RubyScep
   module Version
-    STRING = '0.2.0'
+    STRING = '0.2.1'
 
     module_function
 
