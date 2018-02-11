@@ -1,26 +1,26 @@
 version: 2.0
+
+.build_template: &build_definition
+  working_directory: ~/ruby_scep
+  steps:
+    - checkout
+    - run: bundle install --path vendor/bundle
+    - run:
+        name: Run tests
+        command: bundle exec rspec spec --format progress
 jobs:
   "ruby-2.3":
+    <<: *build_definition
     docker:
       - image: circleci/ruby:2.3-node
-    working_directory: ~/ruby_scep
-    steps:
-      - checkout
-      - run: bundle install --path vendor/bundle
-      - run:
-          name: Run tests
-          command: bundle exec rspec spec --format progress
-
   "ruby-2.4":
+    <<: *build_definition
     docker:
       - image: circleci/ruby:2.4-node
-    working_directory: ~/ruby_scep
-    steps:
-      - checkout
-      - run: bundle install --path vendor/bundle
-      - run:
-          name: Run tests
-          command: bundle exec rspec spec --format progress
+  "ruby-2.5":
+    <<: *build_definition
+    docker:
+      - image: circleci/ruby:2.5-node
 
 workflows:
   version: 2
@@ -28,3 +28,4 @@ workflows:
     jobs:
       - "ruby-2.3"
       - "ruby-2.4"
+      - "ruby-2.5"
