@@ -6,8 +6,8 @@ version: 2.0
     - checkout
     - run: bundle install --path vendor/bundle
     - run:
-      name: Run tests
-      command: bundle exec rspec spec --format progress
+        name: Run tests
+        command: bundle exec rspec spec --format progress
 jobs:
   "ruby-2.3":
     <<: *build_definition
