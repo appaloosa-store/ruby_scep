@@ -1,11 +1,7 @@
 source 'https://rubygems.org'
 
-group :development do
-  gem 'pry', require: false
-end
+# Development and test dependencies are declared in ruby_scep.gemspec so there
+# is a single source of truth for them.
+gemspec
 
-group :test do
-  gem 'rspec'
-  gem 'rspec-its'
-  gem 'timecop'
-end
+gem 'pry', require: false, group: :development

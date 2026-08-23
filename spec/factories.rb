@@ -6,8 +6,11 @@ class Factories
   class << self
     include OpenSSL::ASN1
 
-    def build(method_name, *arguments)
-      send(method_name, *arguments)
+    # Ruby 3 separates positional and keyword arguments: a trailing Hash is no
+    # longer auto-converted into keywords. The factories below take keyword
+    # arguments only, so they must be forwarded as such.
+    def build(method_name, *arguments, **options)
+      send(method_name, *arguments, **options)
     end
 
     private
@@ -51,7 +54,7 @@ class Factories
 
       now = Time.now
 
-      des = OpenSSL::Cipher::Cipher.new('des-ede3-cbc')
+      des = OpenSSL::Cipher.new('des-ede3-cbc')
       des.encrypt
       content_encryption_key = des.random_key
       content_encryption_iv = des.random_iv

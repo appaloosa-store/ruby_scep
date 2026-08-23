@@ -1,4 +1,4 @@
-Ruby SCEP [![CircleCI](https://circleci.com/gh/appaloosa-store/ruby_scep.svg?style=svg)](https://circleci.com/gh/appaloosa-store/ruby_scep)
+Ruby SCEP [![CI](https://github.com/appaloosa-store/ruby_scep/actions/workflows/ci.yml/badge.svg)](https://github.com/appaloosa-store/ruby_scep/actions/workflows/ci.yml)
 ---
 A Ruby gem to handle SCEP.
 

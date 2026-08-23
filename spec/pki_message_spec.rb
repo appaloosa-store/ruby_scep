@@ -34,7 +34,7 @@ describe RubyScep::PkiMessage do
     it { expect(subject.instance_variable_get(:@message_type)).to eq 'PKCSReq' }
     it { expect(subject.instance_variable_get(:@transaction_id)).to eq transaction_id }
     it { expect(subject.instance_variable_get(:@sender_nonce)).to eq sender_nonce }
-    it { expect(subject.instance_variable_get(:@p7).signers.first.name).to eq OpenSSL::X509::Name.parse(cert_subject) }
+    it { expect(subject.instance_variable_get(:@p7).signers.first.issuer).to eq OpenSSL::X509::Name.parse(cert_subject) }
     it { expect(subject.instance_variable_get(:@p7).signers.first.serial).to eq cert_serial }
   end
 
