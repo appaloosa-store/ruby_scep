@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.name = 'ruby_scep'
   s.version = RubyScep::Version::STRING
   s.platform = Gem::Platform::RUBY
-  s.required_ruby_version = '>= 2.3.0'
+  s.required_ruby_version = '>= 3.2.0'
   s.authors = ['Christophe Valentin']
   s.description = <<-EOF
    Ruby implementation of SCEP
@@ -28,7 +28,8 @@ Gem::Specification.new do |s|
 
   s.summary = 'Ruby implementation of SCEP'
 
-  s.add_development_dependency('rspec', '~> 3.6')
-  s.add_development_dependency('rspec-its', '~> 1.2.0')
-  s.add_development_dependency('timecop', '~> 0.9.1')
+  s.add_development_dependency('rake', '~> 13.0')
+  s.add_development_dependency('rspec', '~> 3.13')
+  s.add_development_dependency('rspec-its', '~> 2.0')
+  s.add_development_dependency('timecop', '~> 0.9')
 end

@@ -103,7 +103,7 @@ module RubyScep
     end
 
     def encrypt_payload(der)
-      des = OpenSSL::Cipher::Cipher.new('des-ede3-cbc')
+      des = OpenSSL::Cipher.new('des-ede3-cbc')
       des.encrypt
       encryption_key = des.random_key
       encryption_iv = des.random_iv
