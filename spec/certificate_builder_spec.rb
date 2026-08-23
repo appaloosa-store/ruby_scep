@@ -69,6 +69,84 @@ describe RubyScep::CertificateBuilder do
       end
     end
 
+    describe 'extensions requested by the CSR' do
+      let(:factory) { OpenSSL::X509::ExtensionFactory.new }
+
+      def csr_requesting(*requested)
+        key = OpenSSL::PKey::RSA.new(2048)
+        csr = OpenSSL::X509::Request.new
+        csr.version = 0
+        csr.subject = OpenSSL::X509::Name.parse('/CN=device-1234/O=Appaloosa')
+        csr.public_key = key.public_key
+        unless requested.empty?
+          csr.add_attribute(
+            OpenSSL::X509::Attribute.new(
+              'extReq', OpenSSL::ASN1::Set.new([OpenSSL::ASN1::Sequence.new(requested)])
+            )
+          )
+        end
+        csr.sign(key, OpenSSL::Digest.new('SHA256'))
+        csr
+      end
+
+      def extensions_of(csr)
+        RubyScep::CertificateBuilder.build(csr)
+                                    .extensions
+                                    .each_with_object({}) { |e, all| (all[e.oid] ||= []) << e }
+      end
+
+      it 'carries over a requested subjectAltName' do
+        found = extensions_of(
+          csr_requesting(factory.create_extension('subjectAltName', 'DNS:device.example.com'))
+        )
+        expect(found['subjectAltName'].first.value).to eq 'DNS:device.example.com'
+      end
+
+      it 'marks a carried subjectAltName non-critical, since the subject is populated' do
+        found = extensions_of(
+          csr_requesting(factory.create_extension('subjectAltName', 'DNS:device.example.com', true))
+        )
+        expect(found['subjectAltName'].first).not_to be_critical
+      end
+
+      # The security property this allowlist exists for: a CSR will ask to
+      # become a CA, and must never be granted it.
+      it 'refuses a requested basicConstraints CA:TRUE' do
+        found = extensions_of(
+          csr_requesting(factory.create_extension('basicConstraints', 'CA:TRUE', true))
+        )
+        expect(found['basicConstraints'].map(&:value)).to eq ['CA:FALSE']
+      end
+
+      it 'refuses a request to widen keyUsage' do
+        found = extensions_of(
+          csr_requesting(factory.create_extension('keyUsage', 'keyCertSign,cRLSign', true))
+        )
+        expect(found['keyUsage'].map(&:value)).to eq ['Digital Signature, Key Encipherment']
+      end
+
+      it 'refuses a requested extendedKeyUsage' do
+        found = extensions_of(
+          csr_requesting(factory.create_extension('extendedKeyUsage', 'serverAuth'))
+        )
+        expect(found).not_to have_key 'extendedKeyUsage'
+      end
+
+      it 'emits one subjectAltName even when two are requested' do
+        found = extensions_of(
+          csr_requesting(
+            factory.create_extension('subjectAltName', 'DNS:a.example.com'),
+            factory.create_extension('subjectAltName', 'DNS:b.example.com')
+          )
+        )
+        expect(found['subjectAltName'].size).to eq 1
+      end
+
+      it 'builds when the CSR requests nothing' do
+        expect(extensions_of(csr_requesting)).not_to have_key 'subjectAltName'
+      end
+    end
+
     after(:all) { Timecop.return }
   end
 end
