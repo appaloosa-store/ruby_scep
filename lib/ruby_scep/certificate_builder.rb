@@ -8,6 +8,13 @@ module RubyScep
     # Serial numbers must be positive and fit in 20 octets (RFC 5280 4.1.2.2).
     SERIAL_BITS = 159
 
+    # Extensions a CSR is allowed to influence. A device may legitimately ask
+    # for the names it will be known by; it may not ask to become a CA, nor to
+    # widen its own key usage. Everything outside this list is dropped rather
+    # than honoured -- a CSR requesting `basicConstraints CA:TRUE` must never
+    # produce a certificate that can sign others, and it will ask.
+    COPYABLE_EXTENSIONS = %w[subjectAltName].freeze
+
     class << self
       # @param csr [OpenSSL::X509::Request] the decrypted certificate request
       # @return [OpenSSL::X509::Certificate] an unsigned certificate
@@ -51,6 +58,32 @@ module RubyScep
         # first, which keeps chain validation while dropping the purpose check.
         certificate.add_extension(factory.create_extension('subjectKeyIdentifier', 'hash'))
         certificate.add_extension(factory.create_extension('authorityKeyIdentifier', 'keyid,issuer'))
+
+        server_set = certificate.extensions.map(&:oid)
+        copyable_extensions(csr, server_set).each { |extension| certificate.add_extension(extension) }
+      end
+
+      # @param already_set [Array<String>] OIDs this builder has already decided
+      def copyable_extensions(csr, already_set)
+        requested_extensions(csr)
+          .select { |extension| COPYABLE_EXTENSIONS.include?(extension.oid) }
+          .reject { |extension| already_set.include?(extension.oid) }
+          .uniq(&:oid)
+          .each { |extension| extension.critical = false }
+      end
+
+      # Extensions the CSR asked for through its extensionRequest attribute.
+      # A malformed attribute is ignored rather than raised on: this builder
+      # decides policy, it does not validate the request.
+      def requested_extensions(csr)
+        attribute = csr.attributes.find do |candidate|
+          %w[extReq extensionRequest msExtReq].include?(candidate.oid)
+        end
+        return [] if attribute.nil?
+
+        attribute.value.value.first.value.map { |asn1| OpenSSL::X509::Extension.new(asn1) }
+      rescue StandardError
+        []
       end
 
       # SecureRandom rather than Random: Random is a Mersenne Twister, so its
