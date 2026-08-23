@@ -89,7 +89,7 @@ module RubyScep
     # The certificate will be embedded in the PKIMessage response to complete the SCEP process.
     def generate_device_certificate!(csr)
       certificate = CertificateBuilder.build(csr)
-      certificate.sign(RubyScep.configuration.ca_key, OpenSSL::Digest::SHA1.new)
+      certificate.sign(RubyScep.configuration.ca_key, OpenSSL::Digest.new('SHA256'))
       @device_certificate = certificate
     end
 

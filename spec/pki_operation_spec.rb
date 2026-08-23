@@ -25,6 +25,7 @@ describe RubyScep::PkiOperation do
 
     it { expect(subject.device_certificate.verify(RubyScep.configuration.ca_key)).to eq true }
     it { expect(subject.device_certificate.serial).not_to eq '' }
+    it { expect(subject.device_certificate.signature_algorithm).to eq 'sha256WithRSAEncryption' }
     it do
       response = subject.enrollment_response
       p7 = OpenSSL::PKCS7.new(response)
