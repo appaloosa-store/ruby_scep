@@ -8,6 +8,10 @@ module RubyScep
     # Serial numbers must be positive and fit in 20 octets (RFC 5280 4.1.2.2).
     SERIAL_BITS = 159
 
+    # RFC 7093 method 1 truncates the subjectKeyIdentifier to the leftmost
+    # 160 bits.
+    SKI_LENGTH = 20
+
     # Extensions a CSR is allowed to influence. A device may legitimately ask
     # for the names it will be known by; it may not ask to become a CA, nor to
     # widen its own key usage. Everything outside this list is dropped rather
@@ -56,7 +60,11 @@ module RubyScep
         # a device's signed requests are authenticated. Adding it requires the
         # verifying side to set `store.purpose = OpenSSL::X509::PURPOSE_ANY`
         # first, which keeps chain validation while dropping the purpose check.
-        certificate.add_extension(factory.create_extension('subjectKeyIdentifier', 'hash'))
+        certificate.add_extension(
+          factory.create_extension('subjectKeyIdentifier', subject_key_identifier(certificate.public_key))
+        )
+        # keyid here is a copy of the issuer's own subjectKeyIdentifier, so this
+        # follows whatever derivation the CA certificate used.
         certificate.add_extension(factory.create_extension('authorityKeyIdentifier', 'keyid,issuer'))
 
         server_set = certificate.extensions.map(&:oid)
@@ -91,6 +99,21 @@ module RubyScep
       # which is not a valid serial.
       def generate_serial
         SecureRandom.random_number((1 << SERIAL_BITS) - 1) + 1
+      end
+
+      # RFC 7093 method 1: the leftmost 160 bits of SHA-256 over the
+      # subjectPublicKey BIT STRING contents, excluding the tag, length and
+      # unused-bits octet. OpenSSL's `hash` keyword would derive this with SHA-1
+      # instead (RFC 5280 4.2.1.2 method 1). This matches the derivation the CA
+      # uses, and micromdm's cryptoutil.GenerateSubjectKeyID.
+      #
+      # The BIT STRING contents are the second element of SubjectPublicKeyInfo,
+      # which for RSA is the RSAPublicKey DER -- already stripped of exactly what
+      # the RFC excludes.
+      def subject_key_identifier(public_key)
+        bit_string = OpenSSL::ASN1.decode(public_key.to_der).value[1].value
+        OpenSSL::Digest::SHA256.digest(bit_string)[0, SKI_LENGTH]
+                               .unpack1('H*').upcase.scan(/../).join(':')
       end
     end
   end

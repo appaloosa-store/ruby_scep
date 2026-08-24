@@ -67,6 +67,21 @@ describe RubyScep::CertificateBuilder do
         expect(extensions['subjectKeyIdentifier'].value).not_to be_empty
         expect(extensions['authorityKeyIdentifier'].value).not_to be_empty
       end
+
+      # RFC 7093 method 1, matching the CA and micromdm's
+      # cryptoutil.GenerateSubjectKeyID, rather than OpenSSL's SHA-1 `hash`.
+      it 'derives the subjectKeyIdentifier from SHA-256' do
+        bit_string = OpenSSL::ASN1.decode(decrypted_csr.public_key.to_der).value[1].value
+        expected = OpenSSL::Digest::SHA256.digest(bit_string)[0, 20]
+                                         .unpack1('H*').upcase.scan(/../).join(':')
+        expect(extensions['subjectKeyIdentifier'].value).to eq expected
+      end
+
+      it 'does not derive the subjectKeyIdentifier from SHA-1' do
+        bit_string = OpenSSL::ASN1.decode(decrypted_csr.public_key.to_der).value[1].value
+        sha1 = OpenSSL::Digest::SHA1.digest(bit_string).unpack1('H*').upcase.scan(/../).join(':')
+        expect(extensions['subjectKeyIdentifier'].value).not_to eq sha1
+      end
     end
 
     describe 'extensions requested by the CSR' do
