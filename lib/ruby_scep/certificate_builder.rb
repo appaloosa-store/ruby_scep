@@ -94,9 +94,6 @@ module RubyScep
         []
       end
 
-      # SecureRandom rather than Random: Random is a Mersenne Twister, so its
-      # output is predictable from observed serials. random_number can return 0,
-      # which is not a valid serial.
       def generate_serial
         SecureRandom.random_number((1 << SERIAL_BITS) - 1) + 1
       end
