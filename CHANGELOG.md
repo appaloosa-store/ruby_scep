@@ -15,9 +15,6 @@ materially different certificate.
   the certificate was structurally invalid. Relying parties that enforce the
   version/extension rule reject such a certificate.
 - Sign certificates with SHA-256 instead of SHA-1.
-- Take serial numbers from `SecureRandom` instead of `Random.rand`. The latter is
-  a Mersenne Twister, so serials were predictable from observed ones. Serials
-  stay positive and within the 20 octets RFC 5280 allows.
 - Add `basicConstraints CA:FALSE`, `subjectKeyIdentifier` and
   `authorityKeyIdentifier`, and mark `keyUsage` critical.
 - Derive `subjectKeyIdentifier` per RFC 7093 method 1 -- the leftmost 160 bits of
